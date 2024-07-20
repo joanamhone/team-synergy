@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futuristic Health Monitoring Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0d47a1, #42a5f5);
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        #root {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            background: rgba(26, 26, 46, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: scale(1.02);
+        }
+
+        .card h2 {
+            margin: 0 0 10px;
+            color: #00ffff;
+        }
+
+        .details p {
+            margin: 5px 0;
+        }
+
+        .details strong {
+            width: 120px;
+            display: inline-block;
+        }
+
+        .update-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .update-form input, .update-form button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+        }
+
+        .update-form button {
+            background-color: #00a8ff;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .update-form button:hover {
+            background-color: #0097e6;
+        }
+
+        .notifications {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .notifications li {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .notification-bell {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 1.5em;
+            color: #00ffff;
+        }
+
+        .notification-popup {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .notification-popup.show {
+            display: block;
+        }
+
+        .graph {
+            height: 200px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const Dashboard = () => {
+            const [user, setUser] = useState({
+                name: "John Doe",
+                email: "john.doe@example.com",
+                contact: "+1 234 567 890",
+                address: "123 Main St, Anytown, USA"
+            });
+            const [metrics, setMetrics] = useState({
+                bloodGlucose: 110,
+                bloodPressure: { systolic: 120, diastolic: 80 },
+                heartRate: 72
+            });
+            const [notifications, setNotifications] = useState([
+                "Your blood glucose level is stable.",
+                "New message from your healthcare provider.",
+                "Don't forget to take your medication at 6 PM."
+            ]);
+            const [popupVisible, setPopupVisible] = useState(false);
+
+            const heartRateChartRef = useRef(null);
+            const glucoseChartRef = useRef(null);
+            const bloodPressureChartRef = useRef(null);
+
+            const handleUpdate = (e) => {
+                e.preventDefault();
+                // Logic to update user information
+            };
+
+            const getMetricColor = (value, stableRange) => {
+                if (value >= stableRange[0] && value <= stableRange[1]) return '#4ecdc4';
+                if (value >= stableRange[2] && value <= stableRange[3]) return '#ffd700';
+                return '#ff6b6b';
+            };
+
+            useEffect(() => {
+                const createChart = (ctx, label, color, data) => {
+                    return new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: Array(10).fill(''),
+                            datasets: [{
+                                label: label,
+                                data: data,
+                                borderColor: color,
+                                borderWidth: 2,
+                                fill: false,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            animation: { duration: 0 },
+                            scales: {
+                                y: {
+                                    beginAtZero: false,
+                                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                    ticks: { color: '#e0e0e0' }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { display: false }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    labels: { color: '#e0e0e0' }
+                                }
+                            }
+                        }
+                    });
+                };
+
+                const heartRateChart = createChart(heartRateChartRef.current.getContext('2d'), 'Heart Rate (BPM)', '#ff6b6b', Array(10).fill(70));
+                const glucoseChart = createChart(glucoseChartRef.current.getContext('2d'), 'Glucose (mg/dL)', '#4ecdc4', Array(10).fill(100));
+                const bloodPressureChart = createChart(bloodPressureChartRef.current.getContext('2d'), 'Blood Pressure (mmHg)', '#45aaf2', Array(10).fill(120));
+
+                const interval = setInterval(() => {
+                    const newMetrics = {
+                        bloodGlucose: Math.random() * (150 - 70) + 70,
+                        bloodPressure: {
+                            systolic: Math.random() * (140 - 90) + 90,
+                            diastolic: Math.random() * (90 - 60) + 60
+                        },
+                        heartRate: Math.random() * (100 - 50) + 50
+                    };
+
+                    setMetrics(newMetrics);
+
+                    const updateChart = (chart, newValue) => {
+                        chart.data.datasets[0].data.push(newValue);
+                        chart.data.datasets[0].data.shift();
+                        chart.update();
+                    };
+
+                    updateChart(heartRateChart, newMetrics.heartRate);
+                    updateChart(glucoseChart, newMetrics.bloodGlucose);
+                    updateChart(bloodPressureChart, newMetrics.bloodPressure.systolic);
+
+                    setNotifications(prev => [...prev, "This is a push notification."]);
+                }, 3000);
+
+                return () => clearInterval(interval);
+            }, []);
+
+            return (
+                <div>
+                    <div className="header">
+                        <h1>Futuristic Health Monitoring Dashboard</h1>
+                    </div>
+                    <div className="notification-bell" onClick={() => setPopupVisible(!popupVisible)}>
+                        <i className="fas fa-bell"></i>
+                    </div>
+                    <div className={`notification-popup ${popupVisible ? 'show' : ''}`}>
+                        <h3>Notifications</h3>
+                        <ul className="notifications">
+                            {notifications.slice(-5).map((notification, index) => (
+                                <li key={index}>{notification}</li>
+                            ))}
+                        </ul>
+                    </div>
+                    <div className="dashboard">
+                        <div className="card">
+                            <h2>Account Details</h2>
+                            <form className="update-form" onSubmit={handleUpdate}>
+                                <input type="text" placeholder="Full Name" value={user.name} onChange={(e) => setUser({ ...user, name: e.target.value })} />
+                                <input type="text" placeholder="Email Address" value={user.email} onChange={(e) => setUser({ ...user, email: e.target.value })} />
+                                <input type="text" placeholder="Contact Number" value={user.contact} onChange={(e) => setUser({ ...user, contact: e.target.value })} />
+                                <input type="text" placeholder="Physical Address" value={user.address} onChange={(e) => setUser({ ...user, address: e.target.value })} />
+                                <button type="submit">Update Info</button>
+                            </form>
+                        </div>
+                        <div className="card">
+                            <h2>Health Metrics</h2>
+                            <div className="details">
+                                <p><strong>Blood Glucose:</strong> <span style={{ color: getMetricColor(metrics.bloodGlucose, [70, 100, 100, 150]) }}>{metrics.bloodGlucose.toFixed(1)} mg/dL</span></p>
+                                <p><strong>Blood Pressure:</strong> <span style={{ color: getMetricColor(metrics.bloodPressure.systolic, [90, 120, 120, 140]) }}>{metrics.bloodPressure.systolic.toFixed(0)}/{metrics.bloodPressure.diastolic.toFixed(0)} mmHg</span></p>
+                                <p><strong>Heart Rate:</strong> <span style={{ color: getMetricColor(metrics.heartRate, [60, 80, 80, 100]) }}>{metrics.heartRate.toFixed(0)} bpm</span></p>
+                            </div>
+                        </div>
+                        <div className="card">
+                            <h2>Heart Rate</h2>
+                            <div className="graph">
+                                <canvas ref={heartRateChartRef}></canvas>
+                            </div>
+                        </div>
+                        <div className="card">
+                            <h2>Blood Glucose</h2>
+                            <div className="graph">
+                                <canvas ref={glucoseChartRef}></canvas>
+                            </div>
+                        </div>
+                        <div className="card">
+                            <h2>Blood Pressure</h2>
+                            <div className="graph">
+                                <canvas ref={bloodPressureChartRef}></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<Dashboard />, document.getElementById('root'));
+    </script>
+</body>
+</html>
